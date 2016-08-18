@@ -44,4 +44,7 @@ gosu postgres psql -d $DB -f $SRC/setup.sql
 log "Updating $DB FTS..."
 gosu postgres psql -d $DB -f $SRC/fts-pg/setup.sql
 
+log "Updating $DB stat views..."
+gosu postgres psql -d $DB -f $SRC/stat.sql
+
 log "Done"
