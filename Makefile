@@ -13,17 +13,22 @@ DB_PASSWORD     ?= $(DB)
 all: help
 
 ## запустить контейнер postgresql
-start_pg:
+pg-start:
 	@RUNNING=$$(docker inspect --format="{{ .State.Running }}" $(PG_CONTAINER) 2> /dev/null) ; \
 [ "$$RUNNING" == "true" ] || { echo "Starting DB container $(PG_CONTAINER)..." ; pushd $(CONSUP_ROOT) && fidm start postgres.yml mode=common && popd ; }
 
 ## остановить контейнер postgresql, если он запущен
-stop_pg:
+pg-stop:
 	@RUNNING=$$(docker inspect --format="{{ .State.Running }}" $(PG_CONTAINER) 2> /dev/null) ; \
 [ "$$RUNNING" == "true" ] && { echo "Stopping DB container $(PG_CONTAINER)..." ; pushd $(CONSUP_ROOT) && fidm rm postgres.yml mode=common && popd ; }
 
+## остановить контейнер postgresql, если он запущен, и все подчиненные
+pg-stop:
+	@RUNNING=$$(docker inspect --format="{{ .State.Running }}" $(PG_CONTAINER) 2> /dev/null) ; \
+[ "$$RUNNING" == "true" ] && { echo "Stopping DB container $(PG_CONTAINER)..." ; pushd $(CONSUP_ROOT) && fidm rm -a postgres.yml mode=common && popd ; }
+
 ## создать шаблон БД
-tmpl: start_pg
+build: pg-start
 	@echo "Consup root: $(CONSUP_ROOT)"
 	@cp -rf pg_system $(CONSUP_ROOT)/consup/var/log/postgres_common
 	@docker exec -i $(PG_CONTAINER) bash /var/log/supervisor/pg_system/init.sh $(DBT)
@@ -34,8 +39,8 @@ create database $(DB) owner $(DB_USER) template '$(DBT)';
 endef
 export CREATE_DEF
 
-## создать БД
-db: start_pg
+# создать БД
+db: pg-start
 	@echo "$$CREATE_DEF"
 	@echo "$$CREATE_DEF" | docker exec -i $(PG_CONTAINER) gosu postgres  psql
 
@@ -52,6 +57,7 @@ deps:
 	for n in consul nginx postgres pgrest ; do docker pull lekovr/consup_$$n ; done
 	@echo Done
 
+## cписок доступных целей
 help:
 	@grep -A 1 "^##" Makefile
 

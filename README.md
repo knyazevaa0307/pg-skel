@@ -1,4 +1,4 @@
-db-tmpl
+tmpl-pg
 =======
 
 Создание postgresql template database.
@@ -56,10 +56,30 @@ sudo usermod -a -G docker $USER
 Использование
 -------------
 
+*Создание БД tpro-template*
 ```
 git clone --recirsive http://git.it.tender.pro/iac/tmpl-pg.git
 cd tmpl-pg
 make deps
-make tmpl
+make build
 ```
 
+Если нужно создать БД с другим именем, надо его задать при вызове `make build`:
+```
+DBT=my-template make build
+```
+
+Для создания БД необходим контейнер consup_postgres, будет запущен при необходимости.
+Для того, чобы потом остановить этот контейнер, надо выполнить
+```
+make pg-stop
+```
+
+Актуальный список целей можно посмотреть командой `make`.
+
+License
+-------
+
+This project is under the MIT License. See the [LICENSE](LICENSE) file for the full license text.
+
+Copyright (c) [Tender.Pro](http://www.tender.pro)
