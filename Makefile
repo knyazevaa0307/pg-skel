@@ -1,48 +1,39 @@
 #
-# Создание БД и системных объектов
-# db.tender.pro backend Makefile
+# Создание шаблона БД
+# template database Makefile
 #
 SHELL         = /bin/bash
 CONSUP_ROOT  ?= $$([ -d ../consup ] && echo ".." || { [ -d ../../consup ] && echo "../.." ; } || { [ -d ../../../consup ] && echo "../../.." ; })
+SYSDIR       ?= $(CONSUP_ROOT)/consup/var/log/postgres_common/tmpl-pg
 PG_CONTAINER ?= consup_postgres_common
+FILES        ?= fts-pg  init.sh setup.sql  stat.sql  translit.rules
 DBT          ?= tpro-template
-DB           ?= tpro
-DB_USER         ?= $(DB)
-DB_PASSWORD     ?= $(DB)
 
 all: help
 
+##
+## Цели:
+##
+
 ## запустить контейнер postgresql
 pg-start:
+	@echo "*** $@ ***"
+	@echo "Consup root: $(CONSUP_ROOT)"
 	@RUNNING=$$(docker inspect --format="{{ .State.Running }}" $(PG_CONTAINER) 2> /dev/null) ; \
-[ "$$RUNNING" == "true" ] || { echo "Starting DB container $(PG_CONTAINER)..." ; pushd $(CONSUP_ROOT) && fidm start postgres.yml mode=common && popd ; }
+[ "$$RUNNING" == "true" ] || { echo "Starting DB container $(PG_CONTAINER)..." ; pushd $(CONSUP_ROOT)/consup && fidm start postgres.yml mode=common && popd ; }
 
 ## остановить контейнер postgresql, если он запущен
 pg-stop:
+	@echo "*** $@ ***"
 	@RUNNING=$$(docker inspect --format="{{ .State.Running }}" $(PG_CONTAINER) 2> /dev/null) ; \
-[ "$$RUNNING" == "true" ] && { echo "Stopping DB container $(PG_CONTAINER)..." ; pushd $(CONSUP_ROOT) && fidm rm postgres.yml mode=common && popd ; }
-
-## остановить контейнер postgresql, если он запущен, и все подчиненные
-pg-stop:
-	@RUNNING=$$(docker inspect --format="{{ .State.Running }}" $(PG_CONTAINER) 2> /dev/null) ; \
-[ "$$RUNNING" == "true" ] && { echo "Stopping DB container $(PG_CONTAINER)..." ; pushd $(CONSUP_ROOT) && fidm rm -a postgres.yml mode=common && popd ; }
+[ "$$RUNNING" == "true" ] && { echo "Stopping DB container $(PG_CONTAINER)..." ; pushd $(CONSUP_ROOT)/consup && fidm rm postgres.yml mode=common && popd ; }
 
 ## создать шаблон БД
 build: pg-start
-	@echo "Consup root: $(CONSUP_ROOT)"
-	@cp -rf pg_system $(CONSUP_ROOT)/consup/var/log/postgres_common
-	@docker exec -i $(PG_CONTAINER) bash /var/log/supervisor/pg_system/init.sh $(DBT)
-
-define CREATE_DEF
-create user $(DB_USER) password '$(DB_PASSWORD)';
-create database $(DB) owner $(DB_USER) template '$(DBT)';
-endef
-export CREATE_DEF
-
-# создать БД
-db: pg-start
-	@echo "$$CREATE_DEF"
-	@echo "$$CREATE_DEF" | docker exec -i $(PG_CONTAINER) gosu postgres  psql
+	@echo "*** $@ ***"
+	[ -d $(SYSDIR) ] || mkdir $(SYSDIR)
+	@cp -rf $(FILES) $(SYSDIR)/
+	@docker exec -i $(PG_CONTAINER) bash /var/log/supervisor/tmpl-pg/init.sh $(DBT)
 
 ## установка зависимостей
 deps:
@@ -60,4 +51,3 @@ deps:
 ## cписок доступных целей
 help:
 	@grep -A 1 "^##" Makefile
-
