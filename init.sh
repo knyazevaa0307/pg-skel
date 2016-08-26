@@ -14,7 +14,7 @@ log() {
 
 DB=$1
 
-SRC=/var/log/supervisor/pg_system
+SRC=/var/log/supervisor/tmpl-pg
 D=/usr/share/postgresql/$PG_MAJOR/tsearch_data
 
 log "Setup postgresql system files as user $(id -un)"
@@ -30,6 +30,11 @@ for f in *.* ; do
 done
 popd  > /dev/null
 
+log "Wait for postgresql startup..." ;
+while ! gosu postgres pg_isready -q ; do
+  sleep 1
+done
+
 if gosu postgres psql -lqt | cut -d \| -f 1 | grep -qw $DB; then
   log "Database '$DB' already exists, exiting"
   exit 0
@@ -41,10 +46,12 @@ gosu postgres createdb $DB
 log "Updating $DB extensions..."
 gosu postgres psql -d $DB -f $SRC/setup.sql
 
-log "Updating $DB FTS..."
-gosu postgres psql -d $DB -f $SRC/fts-pg/setup.sql
+## Created in pgm/sql/fts
+#log "Updating $DB FTS..."
+#gosu postgres psql -d $DB -f $SRC/fts-pg/setup.sql
 
-log "Updating $DB stat views..."
-gosu postgres psql -d $DB -f $SRC/stat.sql
+## Created in pgm/sql/utils/40_stat.sql
+#log "Updating $DB stat views..."
+#gosu postgres psql -d $DB -f $SRC/stat.sql
 
 log "Done"
