@@ -3,7 +3,7 @@
 # template database Makefile
 #
 SHELL         = /bin/bash
-CONSUP_ROOT  ?= $$([ -d ../consup ] && echo ".." || { [ -d ../../consup ] && echo "../.." ; } || { [ -d ../../../consup ] && echo "../../.." ; })
+CONSUP_ROOT  ?= ../
 SYSDIR       ?= $(CONSUP_ROOT)/consup/var/log/postgres_common/tmpl-pg
 PG_CONTAINER ?= consup_postgres_common
 FILES        ?= fts-pg  init.sh setup.sql  stat.sql  translit.rules
@@ -38,12 +38,13 @@ build: pg-start
 ## установка зависимостей
 deps:
 	@echo "*** $@ ***"
+	@echo "Consup root: $(CONSUP_ROOT)"
 	# code from http://docs.docker.com/linux/step_one/
 	which docker > /dev/null || wget -qO- https://get.docker.com/ | sh
 	# code from https://github.com/LeKovr/fidm
 	which fidm > /dev/null || wget -qO- https://raw.githubusercontent.com/LeKovr/fidm/master/install.sh | sh
 	# Каталог **consup** должен быть доступен из каталога **iac** как `../consup` или `../../consup`.
-	[[ "$CONSUP_ROOT" ]] || cd .. && wget -qO- https://raw.githubusercontent.com/LeKovr/consup/master/install.sh | sh
+	[[ -d $(CONSUP_ROOT)/consup ]] || cd $(CONSUP_ROOT) && wget -qO- https://raw.githubusercontent.com/LeKovr/consup/master/install.sh | sh
 	# контейнеры Docker
 	for n in consul nginx postgres pgrest ; do docker pull lekovr/consup_$$n ; done
 	@echo Done
