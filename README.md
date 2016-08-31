@@ -58,7 +58,7 @@ sudo usermod -a -G docker $USER
 
 *Создание БД tpro-template*
 ```
-git clone --recirsive http://git.it.tender.pro/iac/tmpl-pg.git
+git clone --recursive http://git.it.tender.pro/iac/tmpl-pg.git
 cd tmpl-pg
 make deps
 make build
