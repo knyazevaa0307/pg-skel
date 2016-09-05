@@ -1,5 +1,5 @@
 -- ----------------------------------------------------------------------------
--- setup iac database
+-- setup template database
 CREATE EXTENSION IF NOT EXISTS unaccent;
 ALTER TEXT SEARCH DICTIONARY unaccent (RULES='translit');
 CREATE EXTENSION IF NOT EXISTS ltree;

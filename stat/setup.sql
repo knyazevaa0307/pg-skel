@@ -20,7 +20,6 @@ CREATE OR REPLACE VIEW pg_table_size AS
   ORDER BY total_bytes DESC
   LIMIT 20
 ;
-GRANT SELECT ON pg_table_size TO public;
 
 CREATE OR REPLACE VIEW pg_db_size AS
   SELECT d.datname AS Name,  pg_catalog.pg_get_userbyid(d.datdba) AS Owner,
@@ -36,7 +35,6 @@ CREATE OR REPLACE VIEW pg_db_size AS
       END DESC -- nulls first
     LIMIT 20
 ;
-GRANT SELECT ON pg_db_size TO public;
 
 -- https://www.keithf4.com/a-large-database-does-not-mean-large-shared_buffers/
 CREATE OR REPLACE VIEW pg_cached_size AS
@@ -53,7 +51,6 @@ CREATE OR REPLACE VIEW pg_cached_size AS
     ORDER BY 3 DESC
     LIMIT 10
 ;
-GRANT SELECT ON pg_cached_size TO public;
 
 -- our
 CREATE OR REPLACE VIEW pg_sql AS
@@ -67,6 +64,3 @@ CREATE OR REPLACE VIEW pg_sql AS
     WHERE query <> '<IDLE>'
     ORDER BY duration DESC
 ;
-GRANT SELECT ON pg_sql TO public;
-
-

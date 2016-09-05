@@ -4,6 +4,8 @@ Full Text Search (далее FTS) в PostgreSQL
 
 Файлы словарей взяты из проекта tpro2009 10.02.2015
 
+Актуальная версия setup.sql размещена в http://git.it.tender.pro/iac/pgm/src/master/sql/fts
+
 ## Настройка полнотекстового поиска
 
 ### 1. Файлы словарей

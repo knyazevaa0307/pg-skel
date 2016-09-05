@@ -2,12 +2,16 @@
 # Создание шаблона БД
 # template database Makefile
 #
-SHELL         = /bin/bash
-CONSUP_ROOT  ?= ..
-SYSDIR       ?= $(CONSUP_ROOT)/consup/var/log/postgres_common/pg-skel
-PG_CONTAINER ?= consup_postgres_common
-FILES        ?= fts/tsearch-data init.sh setup.sql  stat.sql  translit.rules
-DBT          ?= tpro-template
+SHELL        = /bin/bash
+CONSUP_ROOT ?= ..
+FILES       ?= fts/tsearch_data setup.sql
+DBT         ?= tpro-template
+
+PGC_PROJECT ?= consup
+PGC_NAME    ?= postgres
+PGC_MODE    ?= common
+PGC         ?= $(PGC_PROJECT)_$(PGC_NAME)_$(PGC_MODE)
+SYSDIR      ?= $(CONSUP_ROOT)/consup/var/log/$(PGC_NAME)_$(PGC_MODE)/pg-skel
 
 all: help
 
@@ -19,21 +23,40 @@ all: help
 pg-start:
 	@echo "*** $@ ***"
 	@echo "Consup root: $(CONSUP_ROOT)"
-	@RUNNING=$$(docker inspect --format="{{ .State.Running }}" $(PG_CONTAINER) 2> /dev/null) ; \
-[ "$$RUNNING" == "true" ] || { echo "Starting DB container $(PG_CONTAINER)..." ; pushd $(CONSUP_ROOT)/consup && fidm start postgres.yml mode=common && popd ; }
+	@RUNNING=$$(docker inspect --format="{{ .State.Running }}" $(PGC) 2> /dev/null) ; \
+[ "$$RUNNING" == "true" ] || { \
+  echo "Starting DB container $(PGC)..." ; pushd $(CONSUP_ROOT)/consup && fidm start postgres.yml mode=$(PGC_MODE) && popd ; }
 
 ## остановить контейнер postgresql, если он запущен
 pg-stop:
 	@echo "*** $@ ***"
-	@RUNNING=$$(docker inspect --format="{{ .State.Running }}" $(PG_CONTAINER) 2> /dev/null) ; \
-[ "$$RUNNING" == "true" ] && { echo "Stopping DB container $(PG_CONTAINER)..." ; pushd $(CONSUP_ROOT)/consup && fidm rm postgres.yml mode=common && popd ; }
+	@RUNNING=$$(docker inspect --format="{{ .State.Running }}" $(PGC) 2> /dev/null) ; \
+[ "$$RUNNING" == "true" ] && { \
+  echo "Stopping DB container $(PGC)..." ; pushd $(CONSUP_ROOT)/consup && fidm rm postgres.yml mode=$(PGC_MODE) && popd ; }
+
+define EXP_SCRIPT
+DB_NAME=$$1 ; \
+[[ "$$DB_NAME" ]] || { echo "DB_NAME not set. Exiting" ; exit 1 ; } ; \
+SRC=/var/log/supervisor/pg-skel ; \
+D=/usr/share/postgresql/$$PG_MAJOR ; \
+cp -prf $$SRC/tsearch_data/ $$D/ ; \
+echo "Wait for postgresql startup..." ; \
+while ! gosu postgres pg_isready -q ; do sleep 1 ; done ; \
+if psql -lqt | cut -d \| -f 1 | grep -qw $$DB_NAME; then \
+  echo "Database '$$DB' already exists, exiting" ; exit 0 ; \
+fi ; \
+echo "Creating $$DB_NAME..." && gosu postgres createdb $$DB_NAME && \
+echo "Updating $$DB_NAME extensions..." && psql -d $$DB_NAME -f $$SRC/setup.sql ; \
+echo "Done"
+endef
+export EXP_SCRIPT
 
 ## создать шаблон БД
 build: pg-start
 	@echo "*** $@ ***"
-	[ -d $(SYSDIR) ] || mkdir $(SYSDIR)
+	@[ -d $(SYSDIR) ] || mkdir $(SYSDIR)
 	@cp -rf $(FILES) $(SYSDIR)/
-	@docker exec -i $(PG_CONTAINER) bash /var/log/supervisor/pg-skel/init.sh $(DBT)
+	@echo "$$EXP_SCRIPT" | docker exec -i $(PGC) bash -s - $(DBT)
 
 ## установка зависимостей
 deps:
