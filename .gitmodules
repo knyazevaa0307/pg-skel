@@ -1,3 +1,0 @@
-[submodule "fts-pg"]
-	path = fts-pg
-	url = git@git.it.tender.pro:iac/fts-pg.git
