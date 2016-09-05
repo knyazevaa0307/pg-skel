@@ -1,4 +1,4 @@
-tmpl-pg
+pg-skel
 =======
 
 Создание postgresql template database.
@@ -11,7 +11,7 @@ tmpl-pg
 Примеры таких операций:
 
 * CREATE EXTENSION
-* копирование файлов в /usr/share/postgresql/ (например - tsearch_data)
+* копирование файлов в /usr/share/postgresql/tsearch_data
 
 Для того, чтобы убрать потребность в суперпользователе при каждом деплое, принимается следующий алгоритм работы
 
@@ -20,7 +20,7 @@ tmpl-pg
 
 Текущий проект предназначен для выполнения шага 1.
 
-При использовании проекта consup, шаг 2 выполняется автоматически при старте контейнера приложения
+При использовании проекта [ConSup](https://github.com/LeKovr/consup), шаг 2 выполняется автоматически при старте контейнера приложения
 
 Зависимости
 -----------
@@ -58,8 +58,8 @@ sudo usermod -a -G docker $USER
 
 *Создание БД tpro-template*
 ```
-git clone --recursive http://git.it.tender.pro/iac/tmpl-pg.git
-cd tmpl-pg
+git clone http://git.it.tender.pro/iac/pg-skel.git
+cd pg-skel
 make deps
 make build
 ```

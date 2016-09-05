@@ -1,4 +1,4 @@
-# fts-pg
+# Full Text Search
 
 Full Text Search (далее FTS) в PostgreSQL
 

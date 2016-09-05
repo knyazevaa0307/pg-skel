@@ -14,17 +14,13 @@ log() {
 
 DB=$1
 
-SRC=/var/log/supervisor/tmpl-pg
+SRC=/var/log/supervisor/pg-skel
 D=/usr/share/postgresql/$PG_MAJOR/tsearch_data
 
 log "Setup postgresql system files as user $(id -un)"
 
-log "Copy translit"
-F=translit.rules
-[ -e $D/$F ] || cp $SRC/$F $D/
-
-log "Copy fts"
-pushd $SRC/fts-pg/tsearch_data > /dev/null
+log "Copy tsearch_data"
+pushd $SRC/fts/tsearch_data > /dev/null
 for f in *.* ; do
   [ -e $D/$f ] || cp $f $D/
 done
@@ -48,7 +44,7 @@ gosu postgres psql -d $DB -f $SRC/setup.sql
 
 ## Created in pgm/sql/fts
 #log "Updating $DB FTS..."
-#gosu postgres psql -d $DB -f $SRC/fts-pg/setup.sql
+#gosu postgres psql -d $DB -f $SRC/fts/setup.sql
 
 ## Created in pgm/sql/utils/40_stat.sql
 #log "Updating $DB stat views..."

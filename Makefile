@@ -3,10 +3,10 @@
 # template database Makefile
 #
 SHELL         = /bin/bash
-CONSUP_ROOT  ?= ../
-SYSDIR       ?= $(CONSUP_ROOT)/consup/var/log/postgres_common/tmpl-pg
+CONSUP_ROOT  ?= ..
+SYSDIR       ?= $(CONSUP_ROOT)/consup/var/log/postgres_common/pg-skel
 PG_CONTAINER ?= consup_postgres_common
-FILES        ?= fts-pg  init.sh setup.sql  stat.sql  translit.rules
+FILES        ?= fts/tsearch-data init.sh setup.sql  stat.sql  translit.rules
 DBT          ?= tpro-template
 
 all: help
@@ -33,7 +33,7 @@ build: pg-start
 	@echo "*** $@ ***"
 	[ -d $(SYSDIR) ] || mkdir $(SYSDIR)
 	@cp -rf $(FILES) $(SYSDIR)/
-	@docker exec -i $(PG_CONTAINER) bash /var/log/supervisor/tmpl-pg/init.sh $(DBT)
+	@docker exec -i $(PG_CONTAINER) bash /var/log/supervisor/pg-skel/init.sh $(DBT)
 
 ## установка зависимостей
 deps:
