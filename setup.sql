@@ -10,3 +10,6 @@ CREATE EXTENSION IF NOT EXISTS pg_buffercache;
 
 CREATE OR REPLACE LANGUAGE plpgsql;
 CREATE OR REPLACE LANGUAGE plperl;
+
+-- Register as template
+UPDATE pg_database SET datistemplate = TRUE WHERE datname=current_database();
