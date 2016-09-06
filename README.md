@@ -120,4 +120,4 @@ License
 
 This project is under the MIT License. See the [LICENSE](LICENSE) file for the full license text.
 
-Copyright (c) [Tender.Pro](http://www.tender.pro)
+Copyright (c) 2016 [Tender.Pro](http://www.tender.pro)
