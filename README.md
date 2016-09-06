@@ -40,7 +40,8 @@ Git будет установлен вместе с docker, единственн
 
 ### Загрузка
 
-```git clone git@git.it.tender.pro:iac/pg-skel.git
+```
+git clone git@git.it.tender.pro:iac/pg-skel.git
 cd pg-skel
 ```
 
