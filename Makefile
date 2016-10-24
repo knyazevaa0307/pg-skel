@@ -43,7 +43,7 @@ cp -prf $$SRC/tsearch_data/ $$D/ ; \
 echo "Wait for postgresql startup..." ; \
 while ! gosu postgres pg_isready -q ; do sleep 1 ; done ; \
 if psql -lqt | cut -d \| -f 1 | grep -qw $$DB_NAME; then \
-  echo "Database '$$DB' already exists, exiting" ; exit 0 ; \
+  echo "Database '$$DB_NAME' already exists, exiting" ; exit 0 ; \
 fi ; \
 echo "Creating $$DB_NAME..." && gosu postgres createdb $$DB_NAME && \
 echo "Updating $$DB_NAME extensions..." && psql -d $$DB_NAME -f $$SRC/setup.sql ; \
