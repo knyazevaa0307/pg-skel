@@ -61,8 +61,13 @@ start-hook: build
 ## создать шаблон БД
 build: pg-start
 	@echo "*** $@ ***"
-	@[ -d $(SYSDIR) ] || mkdir $(SYSDIR)
-	@cp -rf $(FILES) $(SYSDIR)/
+	@if [ -d $(CONSUP_ROOT)/consup ] ; then \
+  [ -d $(SYSDIR) ] || mkdir $(SYSDIR) ; \
+  cp -rf $(FILES) $(SYSDIR)/ ; \
+elif [ -d ../$(CONSUP_ROOT)/consup ] ; then \
+  [ -d ../$(SYSDIR) ] || mkdir ../$(SYSDIR) ; \
+  cp -rf $(FILES) ../$(SYSDIR)/ ; \
+fi
 	@echo "$$EXP_SCRIPT" | docker exec -i $(PGC) bash -s - $(DBT)
 
 ## установка зависимостей
