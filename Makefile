@@ -51,6 +51,13 @@ echo "Done"
 endef
 export EXP_SCRIPT
 
+# алиасы для ci
+stop:
+
+setup:
+
+start-hook: build
+
 ## создать шаблон БД
 build: pg-start
 	@echo "*** $@ ***"
