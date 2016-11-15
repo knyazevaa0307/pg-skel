@@ -39,6 +39,7 @@ DB_NAME=$$1 ; \
 [[ "$$DB_NAME" ]] || { echo "DB_NAME not set. Exiting" ; exit 1 ; } ; \
 SRC=/var/log/supervisor/pg-skel ; \
 D=/usr/share/postgresql/$$PG_MAJOR ; \
+echo "Copy data files to $$D..." ; \
 cp -prf $$SRC/tsearch_data/ $$D/ ; \
 echo "Wait for postgresql startup..." ; \
 while ! gosu postgres pg_isready -q ; do sleep 1 ; done ; \
