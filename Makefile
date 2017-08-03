@@ -6,6 +6,8 @@ SHELL        = /bin/bash
 CONSUP_ROOT ?= ..
 FILES       ?= fts/tsearch_data setup.sql
 DBT         ?= tpro-template
+#DB_LOCALE   ?= ru_RU.UTF-8
+DB_LOCALE   ?= en_US.UTF-8
 
 PGC_PROJECT ?= consup
 PGC_NAME    ?= postgres
@@ -37,6 +39,8 @@ pg-stop:
 define EXP_SCRIPT
 DB_NAME=$$1 ; \
 [[ "$$DB_NAME" ]] || { echo "DB_NAME not set. Exiting" ; exit 1 ; } ; \
+DB_LOC=$$2 ; \
+[[ "$$DB_LOC" ]] && DB_LOC="-l $$DB_LOC" ; \
 SRC=/var/log/supervisor/pg-skel ; \
 D=/usr/share/postgresql/$$PG_MAJOR ; \
 echo "Copy data files to $$D..." ; \
@@ -46,7 +50,7 @@ while ! gosu postgres pg_isready -q ; do sleep 1 ; done ; \
 if psql -lqt | cut -d \| -f 1 | grep -qw $$DB_NAME; then \
   echo "Database '$$DB_NAME' already exists, exiting" ; exit 0 ; \
 fi ; \
-echo "Creating $$DB_NAME..." && gosu postgres createdb $$DB_NAME && \
+echo "Creating $$DB_NAME..." && gosu postgres createdb -T template0 $$DB_LOC $$DB_NAME && \
 echo "Updating $$DB_NAME extensions..." && psql -d $$DB_NAME -f $$SRC/setup.sql ; \
 echo "Done"
 endef
@@ -69,7 +73,7 @@ elif [ -d ../$(CONSUP_ROOT)/consup ] ; then \
   [ -d ../$(SYSDIR) ] || mkdir ../$(SYSDIR) ; \
   cp -rf $(FILES) ../$(SYSDIR)/ ; \
 fi
-	@echo "$$EXP_SCRIPT" | docker exec -i $(PGC) bash -s - $(DBT)
+	@echo "$$EXP_SCRIPT" | docker exec -i $(PGC) bash -s - $(DBT) $(DB_LOCALE)
 
 ## установка зависимостей
 deps:
