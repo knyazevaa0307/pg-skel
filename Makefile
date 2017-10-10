@@ -2,93 +2,120 @@
 # Создание шаблона БД
 # template database Makefile
 #
-SHELL        = /bin/bash
-CONSUP_ROOT ?= ..
-FILES       ?= fts/tsearch_data setup.sql
-DBT         ?= tpro-template
-#DB_LOCALE   ?= ru_RU.UTF-8
-DB_LOCALE   ?= en_US.UTF-8
+SHELL   = /bin/bash
+CFG     = .env
 
-PGC_PROJECT ?= consup
-PGC_NAME    ?= postgres
-PGC_MODE    ?= common
-PGC         ?= $(PGC_PROJECT)_$(PGC_NAME)_$(PGC_MODE)
-SYSDIR      ?= $(CONSUP_ROOT)/consup/var/log/$(PGC_NAME)_$(PGC_MODE)/pg-skel
+SHARE_ROOT         ?= ../../data/db-share
+FILES              ?= fts/tsearch_data setup.sql
+DB_NAME            ?= tpro-template
+#DB_LOCALE          ?= ru_RU.UTF-8
+DB_LOCALE          ?= en_US.UTF-8
 
-all: help
 
-##
-## Цели:
-##
+# dcape container name prefix
+DCAPE_PROJECT_NAME ?= dcape
+# dcape postgresql container name
+DCAPE_DB           ?= $(DCAPE_PROJECT_NAME)_db_1
 
-## запустить контейнер postgresql
-pg-start:
-	@echo "*** $@ ***"
-	@echo "Consup root: $(CONSUP_ROOT)"
-	@RUNNING=$$(docker inspect --format="{{ .State.Running }}" $(PGC) 2> /dev/null) ; \
-[ "$$RUNNING" == "true" ] || { \
-  echo "Starting DB container $(PGC)..." ; pushd $(CONSUP_ROOT)/consup && fidm start postgres.yml mode=$(PGC_MODE) && popd ; }
+define CONFIG_DEF
+# ------------------------------------------------------------------------------
+# pg-skel settings
 
-## остановить контейнер postgresql, если он запущен
-pg-stop:
-	@echo "*** $@ ***"
-	@RUNNING=$$(docker inspect --format="{{ .State.Running }}" $(PGC) 2> /dev/null) ; \
-[ "$$RUNNING" == "true" ] && { \
-  echo "Stopping DB container $(PGC)..." ; pushd $(CONSUP_ROOT)/consup && fidm rm postgres.yml mode=$(PGC_MODE) && popd ; }
+# Template database name
+DB_NAME=$(DB_NAME)
+
+# Template database locale
+DB_LOCALE=$(DB_LOCALE)
+
+# dcape postgresql container name
+DCAPE_DB=$(DCAPE_DB)
+
+endef
+export CONFIG_DEF
+
+# ------------------------------------------------------------------------------
+# Create script
 
 define EXP_SCRIPT
 DB_NAME=$$1 ; \
 [[ "$$DB_NAME" ]] || { echo "DB_NAME not set. Exiting" ; exit 1 ; } ; \
 DB_LOC=$$2 ; \
 [[ "$$DB_LOC" ]] && DB_LOC="-l $$DB_LOC" ; \
-SRC=/var/log/supervisor/pg-skel ; \
-D=/usr/share/postgresql/$$PG_MAJOR ; \
+SRC=/opt/share/$$DB_NAME ; \
+D=/usr/local/share/postgresql ; \
 echo "Copy data files to $$D..." ; \
 cp -prf $$SRC/tsearch_data/ $$D/ ; \
-echo "Wait for postgresql startup..." ; \
-while ! gosu postgres pg_isready -q ; do sleep 1 ; done ; \
-if psql -lqt | cut -d \| -f 1 | grep -qw $$DB_NAME; then \
+if psql -U postgres -lqt | cut -d \| -f 1 | grep -qw $$DB_NAME; then \
   echo "Database '$$DB_NAME' already exists, exiting" ; exit 0 ; \
 fi ; \
-echo "Creating $$DB_NAME..." && gosu postgres createdb -T template0 $$DB_LOC $$DB_NAME && \
-echo "Updating $$DB_NAME extensions..." && psql -d $$DB_NAME -f $$SRC/setup.sql ; \
+echo "Creating $$DB_NAME..." && su -c "createdb -T template0 $$DB_LOC $$DB_NAME" postgres && \
+echo "Updating $$DB_NAME extensions..." && psql -d $$DB_NAME -U postgres -f $$SRC/setup.sql ; \
 echo "Done"
 endef
 export EXP_SCRIPT
 
-# алиасы для ci
-stop:
+# ------------------------------------------------------------------------------
 
-setup:
+-include $(CFG)
+export
 
-start-hook: build
+.PHONY: all $(CFG) start start-hook stop update docker-wait db-create db-drop help
 
-## создать шаблон БД
-build: pg-start
+##
+## Цели:
+##
+
+all: help
+
+# ------------------------------------------------------------------------------
+# webhook commands
+
+start: db-create
+
+start-hook: db-create
+
+stop: db-drop
+
+update: db-create
+
+# ------------------------------------------------------------------------------
+# docker
+
+# Wait for postgresql container start
+docker-wait:
+	@echo -n "Checking PG is ready..."
+	@until [[ `docker inspect -f "{{.State.Health.Status}}" $$DCAPE_DB` == healthy ]] ; do sleep 1 ; echo -n "." ; done
+	@echo "Ok"
+
+# ------------------------------------------------------------------------------
+# DB operations
+
+## create db and load sql
+db-create: docker-wait
+	@echo "*** $@ ***" ; \
+	dest=$(SHARE_ROOT)/$$DB_NAME ; \
+	[ -d $$dest ] || mkdir $$dest ; \
+	cp -rf $(FILES) $$dest/ ; \
+	echo "$$EXP_SCRIPT" | docker exec -i $$DCAPE_DB bash -s - $$DB_NAME $$DB_LOCALE
+
+## drop database
+db-drop: docker-wait
 	@echo "*** $@ ***"
-	@if [ -d $(CONSUP_ROOT)/consup ] ; then \
-  [ -d $(SYSDIR) ] || mkdir $(SYSDIR) ; \
-  cp -rf $(FILES) $(SYSDIR)/ ; \
-elif [ -d ../$(CONSUP_ROOT)/consup ] ; then \
-  [ -d ../$(SYSDIR) ] || mkdir ../$(SYSDIR) ; \
-  cp -rf $(FILES) ../$(SYSDIR)/ ; \
-fi
-	@echo "$$EXP_SCRIPT" | docker exec -i $(PGC) bash -s - $(DBT) $(DB_LOCALE)
+	@docker exec -i $$DCAPE_DB psql -U postgres -c "UPDATE pg_database SET datistemplate = FALSE WHERE datname = '$$DB_NAME';"
+	@docker exec -i $$DCAPE_DB psql -U postgres -c "DROP DATABASE \"$$DB_NAME\";" || true
 
-## установка зависимостей
-deps:
-	@echo "*** $@ ***"
-	@echo "Consup root: $(CONSUP_ROOT)"
-	# code from http://docs.docker.com/linux/step_one/
-	which docker > /dev/null || wget -qO- https://get.docker.com/ | sh
-	# code from https://github.com/LeKovr/fidm
-	which fidm > /dev/null || wget -qO- https://raw.githubusercontent.com/LeKovr/fidm/master/install.sh | sh
-	# Каталог **consup** должен быть доступен из каталога **iac** как `../consup` или `../../consup`.
-	[[ -d $(CONSUP_ROOT)/consup ]] || cd $(CONSUP_ROOT) && wget -qO- https://raw.githubusercontent.com/LeKovr/consup/master/install.sh | sh
-	# контейнеры Docker
-	for n in consul nginx postgres pgrest ; do docker pull lekovr/consup_$$n ; done
-	@echo Done
+# ------------------------------------------------------------------------------
 
-## cписок доступных целей
+## create initial config
+$(CFG):
+	@echo "$$CONFIG_DEF" > $@
+
+# ------------------------------------------------------------------------------
+
+## List Makefile targets
 help:
-	@grep -A 1 "^##" Makefile
+	@grep -A 1 "^##" Makefile | less
+
+##
+## Press 'q' for exit
+##
