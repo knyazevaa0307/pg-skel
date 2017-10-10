@@ -2,12 +2,14 @@
 # Создание шаблона БД
 # template database Makefile
 #
-SHELL        = /bin/bash
-SHARE_ROOT ?= ../../data/db-share
-FILES       ?= fts/tsearch_data setup.sql
-DB_NAME         ?= tpro-template
-#DB_LOCALE   ?= ru_RU.UTF-8
-DB_LOCALE   ?= en_US.UTF-8
+SHELL   = /bin/bash
+CFG     = .env
+
+SHARE_ROOT         ?= ../../data/db-share
+FILES              ?= fts/tsearch_data setup.sql
+DB_NAME            ?= tpro-template
+#DB_LOCALE          ?= ru_RU.UTF-8
+DB_LOCALE          ?= en_US.UTF-8
 
 
 # dcape container name prefix
