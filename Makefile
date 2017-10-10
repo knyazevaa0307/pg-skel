@@ -42,7 +42,7 @@ DB_NAME=$$1 ; \
 DB_LOC=$$2 ; \
 [[ "$$DB_LOC" ]] && DB_LOC="-l $$DB_LOC" ; \
 SRC=/opt/share/$$DB_NAME ; \
-D=/usr/share/postgresql/$$PG_MAJOR ; \
+D=/usr/local/share/postgresql ; \
 echo "Copy data files to $$D..." ; \
 cp -prf $$SRC/tsearch_data/ $$D/ ; \
 if psql -lqt | cut -d \| -f 1 | grep -qw $$DB_NAME; then \
@@ -93,7 +93,7 @@ docker-wait:
 ## create db and load sql
 db-create: docker-wait
 	@echo "*** $@ ***" ; \
-	dest=$(SHARE_ROOT)/$$DB_NAME ;
+	dest=$(SHARE_ROOT)/$$DB_NAME ; \
 	[ -d $$dest ] || mkdir $$dest ; \
 	cp -rf $(FILES) $$dest/ ; \
 	echo "$$EXP_SCRIPT" | docker exec -i $$DCAPE_DB bash -s - $$DB_NAME $$DB_LOCALE
