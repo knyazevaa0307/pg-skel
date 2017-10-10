@@ -48,8 +48,8 @@ cp -prf $$SRC/tsearch_data/ $$D/ ; \
 if psql -lqt | cut -d \| -f 1 | grep -qw $$DB_NAME; then \
   echo "Database '$$DB_NAME' already exists, exiting" ; exit 0 ; \
 fi ; \
-echo "Creating $$DB_NAME..." && gosu postgres createdb -T template0 $$DB_LOC $$DB_NAME && \
-echo "Updating $$DB_NAME extensions..." && psql -d $$DB_NAME -f $$SRC/setup.sql ; \
+echo "Creating $$DB_NAME..." && su -c 'createdb -T template0 $$DB_LOC $$DB_NAME' postgres && \
+echo "Updating $$DB_NAME extensions..." && psql -d $$DB_NAME -U postgres -f $$SRC/setup.sql ; \
 echo "Done"
 endef
 export EXP_SCRIPT
