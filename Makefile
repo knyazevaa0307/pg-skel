@@ -101,6 +101,7 @@ db-create: docker-wait
 ## drop database
 db-drop: docker-wait
 	@echo "*** $@ ***"
+	@docker exec -it $$DCAPE_DB psql -U postgres -c "UPDATE pg_database SET datistemplate = FALSE WHERE datname = \"$$DB_NAME\";"
 	@docker exec -it $$DCAPE_DB psql -U postgres -c "DROP DATABASE \"$$DB_NAME\";" || true
 
 # ------------------------------------------------------------------------------
