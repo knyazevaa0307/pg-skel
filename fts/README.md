@@ -4,7 +4,7 @@ Full Text Search (далее FTS) в PostgreSQL
 
 Файлы словарей взяты из проекта tpro2009 10.02.2015
 
-Актуальная версия setup.sql размещена в http://git.it.tender.pro/iac/pgm/src/master/sql/fts
+Актуальная версия setup.sql: https://github.com/TenderPro/pgm/tree/master/sql/fts
 
 ## Настройка полнотекстового поиска
 
@@ -18,7 +18,7 @@ Full Text Search (далее FTS) в PostgreSQL
  - russian_tpro_synonym_phrases.ths
  
 Их нужно скорпировать в папку tsearch_data
-(по умолчанию это каталог /usr/share/postgresql/9.3/tsearch_data/)
+(по умолчанию это каталог /usr/share/postgresql/tsearch_data/)
 
 ### 2. Настройка словарей
 
@@ -28,7 +28,6 @@ Full Text Search (далее FTS) в PostgreSQL
 ### 3. Использование словарей
 
 Название поисковой конфигурации зашивается в функцию public.const_search() и, если в настройках БД параметр default_text_search_config не совпадает с ее значением, в запросах надо использовать ее имя.
-
 
 ```
 -- Далее необходимо создать индекс на таблице table_name.field_name на основе словаря

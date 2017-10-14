@@ -5,12 +5,8 @@
 SHELL   = /bin/bash
 CFG     = .env
 
-SHARE_ROOT         ?= ../../data/db-share
-FILES              ?= fts/tsearch_data setup.sql
 DB_NAME            ?= tpro-template
-#DB_LOCALE          ?= ru_RU.UTF-8
-DB_LOCALE          ?= en_US.UTF-8
-
+DB_LOCALE          ?= ru_RU.UTF-8
 
 # dcape container name prefix
 DCAPE_PROJECT_NAME ?= dcape
@@ -32,27 +28,6 @@ DCAPE_DB=$(DCAPE_DB)
 
 endef
 export CONFIG_DEF
-
-# ------------------------------------------------------------------------------
-# Create script
-
-define EXP_SCRIPT
-DB_NAME=$$1 ; \
-[[ "$$DB_NAME" ]] || { echo "DB_NAME not set. Exiting" ; exit 1 ; } ; \
-DB_LOC=$$2 ; \
-[[ "$$DB_LOC" ]] && DB_LOC="-l $$DB_LOC" ; \
-SRC=/opt/share/$$DB_NAME ; \
-D=/usr/local/share/postgresql ; \
-echo "Copy data files to $$D..." ; \
-cp -prf $$SRC/tsearch_data/ $$D/ ; \
-if psql -U postgres -lqt | cut -d \| -f 1 | grep -qw $$DB_NAME; then \
-  echo "Database '$$DB_NAME' already exists, exiting" ; exit 0 ; \
-fi ; \
-echo "Creating $$DB_NAME..." && su -c "createdb -T template0 $$DB_LOC $$DB_NAME" postgres && \
-echo "Updating $$DB_NAME extensions..." && psql -d $$DB_NAME -U postgres -f $$SRC/setup.sql ; \
-echo "Done"
-endef
-export EXP_SCRIPT
 
 # ------------------------------------------------------------------------------
 
@@ -93,10 +68,14 @@ docker-wait:
 ## create db and load sql
 db-create: docker-wait
 	@echo "*** $@ ***" ; \
-	dest=$(SHARE_ROOT)/$$DB_NAME ; \
-	[ -d $$dest ] || mkdir $$dest ; \
-	cp -rf $(FILES) $$dest/ ; \
-	echo "$$EXP_SCRIPT" | docker exec -i $$DCAPE_DB bash -s - $$DB_NAME $$DB_LOCALE
+	docker cp ./fts/tsearch_data $$DCAPE_DB:/opt/shared ; \
+	docker exec -i $$DCAPE_DB shared-sync.sh ; \
+	[[ "$$DB_LOCALE" ]] && DB_LOCALE="-l $$DB_LOCALE" ; \
+	echo "Creating $$DB_NAME..." && \
+	docker exec -i $$DCAPE_DB su-exec postgres createdb -T template0 $$DB_LOCALE $$DB_NAME || db_exists=1 ; \
+	if [[ ! "$$db_exists" ]] ; then \
+	  cat setup.sql | docker exec -i $$DCAPE_DB psql -U postgres -f - ; \
+	fi
 
 ## drop database
 db-drop: docker-wait

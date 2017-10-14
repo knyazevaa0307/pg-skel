@@ -20,8 +20,6 @@ pg-skel
 
 Текущий проект предназначен для выполнения шага 1.
 
-Данный репозиторий является стандартным приложением [dcape](https://github.com/dopos/dcape) и его установка производится через webhook.
-
 Зависимости
 -----------
 
@@ -31,6 +29,18 @@ pg-skel
 
 Быстрый старт
 -------------
+
+На локальной системе должен быть развернут [dcape](https://github.com/dopos/dcape), в настройках которого задан `PG_IMAGE=dopos/postgresql`.
+```
+git clone https://github.com/TenderPro/pg-skel.git
+cd pg-skel
+make start
+```
+
+Установка на хост dcape
+-----------------------
+
+Данный репозиторий является стандартным приложением [dcape](https://github.com/dopos/dcape) и его установка производится через webhook.
 
 см [Интеграция приложения в dcape](https://github.com/dopos/dcape/blob/master/DEPLOY.md)
 
