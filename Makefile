@@ -2,8 +2,11 @@
 # Создание шаблона БД
 # template database Makefile
 #
-SHELL   = /bin/bash
-CFG     = .env
+SHELL               = /bin/bash
+CFG                 = .env
+
+# on alpine use su-exec
+GOSU               ?= gosu
 
 DB_NAME            ?= tpro-template
 DB_LOCALE          ?= ru_RU.UTF-8
@@ -72,9 +75,9 @@ db-create: docker-wait
 	docker exec -i $$DCAPE_DB shared-sync.sh ; \
 	[[ "$$DB_LOCALE" ]] && DB_LOCALE="-l $$DB_LOCALE" ; \
 	echo "Creating $$DB_NAME..." && \
-	docker exec -i $$DCAPE_DB su-exec postgres createdb -T template0 $$DB_LOCALE $$DB_NAME || db_exists=1 ; \
+	docker exec -i $$DCAPE_DB $(GOSU) postgres createdb -T template0 $$DB_LOCALE $$DB_NAME || db_exists=1 ; \
 	if [[ ! "$$db_exists" ]] ; then \
-	  cat setup.sql | docker exec -i $$DCAPE_DB psql -U postgres -f - ; \
+	  cat setup.sql | docker exec -i $$DCAPE_DB psql -U postgres -d $$DB_NAME -f - ; \
 	fi
 
 ## drop database
