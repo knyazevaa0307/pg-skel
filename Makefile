@@ -33,6 +33,27 @@ endef
 export CONFIG_DEF
 
 # ------------------------------------------------------------------------------
+# Create script
+
+define EXP_SCRIPT
+DB_NAME=$$1 ; \
+[[ "$$DB_NAME" ]] || { echo "DB_NAME not set. Exiting" ; exit 1 ; } ; \
+DB_LOC=$$2 ; \
+[[ "$$DB_LOC" ]] && DB_LOC="-l $$DB_LOC" ; \
+SRC=/opt/share/$$DB_NAME ; \
+D=/usr/local/share/postgresql ; \
+echo "Copy data files to $$D..." ; \
+cp -prf $$SRC/tsearch_data/ $$D/ ; \
+if psql -U postgres -lqt | cut -d \| -f 1 | grep -qw $$DB_NAME; then \
+  echo "Database '$$DB_NAME' already exists, exiting" ; exit 0 ; \
+fi ; \
+echo "Creating $$DB_NAME..." && su -c "createdb -T template0 $$DB_LOC $$DB_NAME" postgres && \
+echo "Updating $$DB_NAME extensions..." && psql -d $$DB_NAME -U postgres -f $$SRC/setup.sql ; \
+echo "Done"
+endef
+export EXP_SCRIPT
+
+# ------------------------------------------------------------------------------
 
 -include $(CFG)
 export
