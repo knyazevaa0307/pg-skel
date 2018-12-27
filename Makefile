@@ -92,12 +92,16 @@ docker-wait:
 ## create db and load sql
 db-create: docker-wait
 	@echo "*** $@ ***" ; \
-	docker cp ./fts/tsearch_data $$DCAPE_DB:/opt/shared ; \
-	docker exec -i $$DCAPE_DB shared-sync.sh ; \
+	DEST=$$(docker exec $$DCAPE_DB printenv INITDB_DIR) ; \
+	if [ ! $$DEST ]; then echo "Unsupported db container, exiting" ; exit 1; fi ; \
+	docker cp ./fts/tsearch_data $$DCAPE_DB:$$DEST ; \
+	docker cp ./tsearch_data.sh $$DCAPE_DB:$$DEST ; \
+	docker exec -i $$DCAPE_DB $$DEST/tsearch_data.sh ; \
 	[[ "$$DB_LOCALE" ]] && DB_LOCALE="-l $$DB_LOCALE" ; \
-	echo "Creating $$DB_NAME..." && \
-	docker exec -i $$DCAPE_DB $(GOSU) postgres createdb -T template0 $$DB_LOCALE $$DB_NAME || db_exists=1 ; \
+	db_exists=$$(docker exec $$DCAPE_DB psql -U postgres -lqt | grep -o -E "^ ($$DB_NAME) ") ; \
 	if [[ ! "$$db_exists" ]] ; then \
+	  echo "Creating $$DB_NAME..." && \
+	  docker exec -i $$DCAPE_DB $(GOSU) postgres createdb -T template0 $$DB_LOCALE $$DB_NAME ; \
 	  cat setup.sql | docker exec -i $$DCAPE_DB psql -U postgres -d $$DB_NAME -f - ; \
 	fi
 

@@ -11,7 +11,7 @@ pg-skel
 Примеры таких операций:
 
 * CREATE EXTENSION
-* копирование файлов в /usr/share/postgresql/tsearch_data
+* копирование файлов в /usr/share/postgresql/$PG_MAJOR/tsearch_data
 
 Для того, чтобы убрать потребность в суперпользователе при каждом деплое, принимается следующий алгоритм работы
 
